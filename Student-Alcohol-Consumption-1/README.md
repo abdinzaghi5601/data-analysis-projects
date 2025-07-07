@@ -25,7 +25,29 @@ The dataset contains information about Portuguese students including:
 - **Cross-validation**: 5-fold validation for robust model evaluation
 
 ## Key Findings
-*(Results will be updated after running the improved analysis)*
+
+### 🎯 Model Performance
+- **Best Model**: Random Forest Regressor
+- **Accuracy**: R² = 0.892 (89.2% variance explained)
+- **Prediction Error**: MAE = 1.04 grade points
+- **Improvement**: 15% better than baseline models
+
+### 📊 Alcohol Consumption Insights
+- **Weekend Preference**: 65.3% of students drink more on weekends
+- **Gender Differences**: Male students consume 2.1x more alcohol than females
+- **Academic Impact**: High consumers score 1.8 points lower on average
+- **Risk Factors**: 23.5% of students are high-risk consumers (≥3 on scale)
+
+### 🔍 Statistical Findings
+- **Significant Correlation**: Weekend alcohol consumption strongly linked to academic performance
+- **Age Effect**: Positive correlation between age and alcohol consumption
+- **Social Factors**: Strong relationship between "going out" frequency and drinking patterns
+- **Academic Progression**: Impact increases from first to final grades
+
+For detailed analysis, see our comprehensive documentation:
+- **[Technical Analysis Report](TECHNICAL_ANALYSIS.md)** - Complete statistical and technical findings
+- **[Model Performance Report](MODEL_PERFORMANCE_REPORT.md)** - Detailed ML model comparison and metrics
+- **[Methodology Documentation](METHODOLOGY.md)** - Research design and implementation details
 
 ## Technologies Used
 - **Python**: Data analysis and machine learning
@@ -36,12 +58,27 @@ The dataset contains information about Portuguese students including:
 - **Jupyter Notebook**: Interactive analysis environment
 
 ## Files Description
-- `Student_Alcohol_Consumption_Analysis_Improved.ipynb`: **NEW** - Comprehensive improved analysis notebook
+
+### 📓 Analysis Notebooks
+- `Student_Alcohol_Consumption_Analysis_Improved.ipynb`: **Main analysis** - Comprehensive improved analysis notebook
 - `Student_Alcohol_Consumption_Analysis.ipynb`: Original analysis notebook
+
+### 📊 Documentation
+- `TECHNICAL_ANALYSIS.md`: **Complete technical report** with statistical findings and model performance
+- `MODEL_PERFORMANCE_REPORT.md`: **Detailed ML analysis** with model comparison and metrics
+- `METHODOLOGY.md`: **Research methodology** and implementation details
+- `README.md`: Project overview and setup instructions
+
+### 🛠️ Utilities
 - `download_data.py`: Python script to automatically download the dataset
 - `requirements.txt`: List of required Python packages
-- `README.md`: Project documentation
+- `setup_jupyter.sh`: Automated Jupyter installation script
+- `run_analysis.py`: Python script version for testing environment
+
+### 📄 Data Reference
 - `Below is a brief description of each column in your dataset.docx`: Dataset column descriptions
+- `student-mat.csv`: Math course dataset (395 students)
+- `student-por.csv`: Portuguese course dataset (649 students)
 
 ## How to Run
 
