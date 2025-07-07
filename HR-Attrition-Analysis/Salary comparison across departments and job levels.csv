@@ -1,0 +1,16 @@
+Department,JobLevel,employee_count,min_salary,avg_salary,max_salary,avg_salary_hike
+"Human Resources",1,33,1555,2733.21,4936,14.67
+"Human Resources",2,12,3886,5498.17,6430,14.42
+"Human Resources",3,6,7988,9623.00,10725,15.67
+"Human Resources",4,4,14026,16147.50,17328,14.50
+"Human Resources",5,7,18200,19197.86,19717,14.57
+"Research & Development",1,410,1009,2838.60,4968,15.30
+"Research & Development",2,272,2042,5286.07,9957,15.28
+"Research & Development",3,121,5210,10153.96,13757,15.43
+"Research & Development",4,68,11103,15634.68,17924,15.71
+"Research & Development",5,47,18061,19216.53,19999,14.09
+Sales,1,75,1052,2505.35,4400,15.40
+Sales,2,233,2086,5731.98,9998,15.17
+Sales,3,79,7082,9294.94,13591,14.76
+Sales,4,34,11836,15166.26,17875,14.56
+Sales,5,12,18041,19099.75,19847,15.58

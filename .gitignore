@@ -1,0 +1,17 @@
+# Power BI files (optional - these are large binary files)
+*.pbix
+
+# Temporary files
+*.tmp
+*.temp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Large data files (optional)
+*.zip
+*.rar
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/

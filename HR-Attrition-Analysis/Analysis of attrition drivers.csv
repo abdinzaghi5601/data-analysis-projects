@@ -1,0 +1,12 @@
+Department,JobRole,avg_job_satisfaction,avg_salary,avg_work_life_balance,avg_job_involvement,attrition_count,attrition_rate
+Sales,"Sales representative",2.72,2626.20,2.90,2.65,33,40.24
+"Research & Development","Laboratory technician",2.70,3246.22,2.71,2.68,60,24.19
+"Human Resources","Human resources",2.53,4194.35,2.96,2.71,12,23.53
+Sales,"Sales executive",2.74,6913.28,2.80,2.73,55,17.46
+"Research & Development","Research scientist",2.79,3232.85,2.68,2.79,44,16.00
+"Research & Development","Healthcare representative",2.78,7492.50,2.71,2.74,9,7.14
+"Research & Development","Manufacturing director",2.66,7298.53,2.76,2.68,9,6.47
+"Research & Development",Manager,2.64,17093.28,2.77,2.79,3,5.66
+Sales,Manager,2.81,16932.53,2.78,2.69,2,5.56
+"Research & Development","Research director",2.73,16078.04,2.84,2.77,2,2.60
+"Human Resources",Manager,2.82,18088.64,2.91,2.91,0,0.00
