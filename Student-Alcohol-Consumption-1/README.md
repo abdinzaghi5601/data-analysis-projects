@@ -59,55 +59,52 @@ For detailed analysis, see our comprehensive documentation:
 
 ## Files Description
 
-### 📓 Analysis Notebooks
-- `Student_Alcohol_Consumption_Analysis_Improved.ipynb`: **Main analysis** - Comprehensive improved analysis notebook
-- `Student_Alcohol_Consumption_Analysis.ipynb`: Original analysis notebook
+### 📓 Analysis Notebook
+- `Student_Alcohol_Consumption_Analysis_Improved.ipynb`: **Main analysis** - Comprehensive analysis with machine learning models and statistical testing
 
-### 📊 Documentation
+### 📊 Technical Documentation
 - `TECHNICAL_ANALYSIS.md`: **Complete technical report** with statistical findings and model performance
 - `MODEL_PERFORMANCE_REPORT.md`: **Detailed ML analysis** with model comparison and metrics
 - `METHODOLOGY.md`: **Research methodology** and implementation details
+- `PROJECT_SUMMARY.md`: **Executive summary** with key findings and achievements
 - `README.md`: Project overview and setup instructions
 
-### 🛠️ Utilities
-- `download_data.py`: Python script to automatically download the dataset
-- `requirements.txt`: List of required Python packages
-- `setup_jupyter.sh`: Automated Jupyter installation script
-- `run_analysis.py`: Python script version for testing environment
-
-### 📄 Data Reference
-- `Below is a brief description of each column in your dataset.docx`: Dataset column descriptions
+### 📄 Dataset Files
 - `student-mat.csv`: Math course dataset (395 students)
 - `student-por.csv`: Portuguese course dataset (649 students)
+- `Below is a brief description of each column in your dataset.docx`: Dataset column descriptions
+
+### ⚙️ Configuration
+- `requirements.txt`: List of required Python packages
 
 ## How to Run
 
 ### Quick Start Options
-**Option 1: Google Colab (Easiest)**
+
+**Option 1: Google Colab (Recommended)**
 1. Go to [Google Colab](https://colab.research.google.com/)
 2. Upload `Student_Alcohol_Consumption_Analysis_Improved.ipynb`
-3. Install packages: `!pip install pandas numpy matplotlib seaborn scikit-learn scipy plotly`
+3. Upload the dataset files: `student-mat.csv` and `student-por.csv`
+4. Install packages: `!pip install pandas numpy matplotlib seaborn scikit-learn scipy plotly`
+5. Run the analysis cells sequentially
 
-**Option 2: GitHub Viewer (Read-only)**
-1. View the notebook directly on GitHub (renders automatically)
-2. Navigate to the file in this repository
-
-**Option 3: Local Installation**
-1. **Install Jupyter**: Run `./setup_jupyter.sh` (Linux/WSL) or `pip install jupyter`
+**Option 2: Local Jupyter Environment**
+1. **Install Jupyter**: `pip install jupyter`
 2. **Install packages**: `pip install -r requirements.txt`
-3. **Download dataset**: `python download_data.py`
-4. **Start Jupyter**: `jupyter notebook`
-5. **Open**: `Student_Alcohol_Consumption_Analysis_Improved.ipynb`
+3. **Start Jupyter**: `jupyter notebook`
+4. **Open**: `Student_Alcohol_Consumption_Analysis_Improved.ipynb`
+5. **Run analysis**: Execute cells sequentially
 
-**Option 4: Python Script Version**
-1. **Test environment**: `python3 run_analysis.py`
-2. **Follow instructions** for full setup
+**Option 3: View Results**
+1. Browse the technical documentation:
+   - `TECHNICAL_ANALYSIS.md` for complete findings
+   - `MODEL_PERFORMANCE_REPORT.md` for model details
+   - `PROJECT_SUMMARY.md` for executive overview
 
-### Troubleshooting
-- **Jupyter not found**: Use `setup_jupyter.sh` script or install via `pip install jupyter`
-- **Missing packages**: Install via `pip install -r requirements.txt`
-- **Can't open .ipynb**: Try Google Colab or VS Code with Jupyter extension
-- **Dataset missing**: Run `python download_data.py` first
+### Prerequisites
+- Python 3.7+
+- Required packages listed in `requirements.txt`
+- Jupyter Notebook or Google Colab access
 
 ## Improvements Made
 ### 🔧 Technical Improvements
