@@ -63,3 +63,28 @@ Each project folder contains its own analysis files and documentation. Navigate 
 ## Data Sources
 
 The datasets used in these projects are for educational and analysis purposes. Please refer to individual project documentation for specific data source information.
+
+## Contributors
+
+**Primary Developer**: Abdullah  
+**Institution**: EIA (Excellence in Innovation Academy)  
+**Email**: abdullah@eia.edu
+
+### Contributions
+- Complete project development and implementation across all analysis domains
+- Advanced machine learning model development and optimization
+- Statistical analysis and hypothesis testing
+- Comprehensive technical documentation and methodology
+- Data visualization and interactive dashboard creation
+
+### Academic Supervision
+**EIA (Excellence in Innovation Academy)**
+- Research methodology guidance and oversight
+- Quality assurance and validation protocols
+- Academic standards compliance and review
+
+## Project Attribution
+
+All projects in this repository were developed by Abdullah as part of advanced data science research at EIA (Excellence in Innovation Academy). The work represents original analysis, implementation, and documentation completed under academic supervision.
+
+For detailed contributor information, see [CONTRIBUTORS.md](CONTRIBUTORS.md)
