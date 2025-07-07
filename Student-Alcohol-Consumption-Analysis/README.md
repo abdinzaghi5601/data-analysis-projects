@@ -44,10 +44,33 @@ The dataset contains information about Portuguese students including:
 - `Below is a brief description of each column in your dataset.docx`: Dataset column descriptions
 
 ## How to Run
-1. **Install required packages**: `pip install -r requirements.txt`
-2. **Download the dataset**: `python download_data.py`
-3. **Run the improved analysis**: Open `Student_Alcohol_Consumption_Analysis_Improved.ipynb` in Jupyter
-4. **Alternative**: Use the original notebook: `Student_Alcohol_Consumption_Analysis.ipynb`
+
+### Quick Start Options
+**Option 1: Google Colab (Easiest)**
+1. Go to [Google Colab](https://colab.research.google.com/)
+2. Upload `Student_Alcohol_Consumption_Analysis_Improved.ipynb`
+3. Install packages: `!pip install pandas numpy matplotlib seaborn scikit-learn scipy plotly`
+
+**Option 2: GitHub Viewer (Read-only)**
+1. View the notebook directly on GitHub (renders automatically)
+2. Navigate to the file in this repository
+
+**Option 3: Local Installation**
+1. **Install Jupyter**: Run `./setup_jupyter.sh` (Linux/WSL) or `pip install jupyter`
+2. **Install packages**: `pip install -r requirements.txt`
+3. **Download dataset**: `python download_data.py`
+4. **Start Jupyter**: `jupyter notebook`
+5. **Open**: `Student_Alcohol_Consumption_Analysis_Improved.ipynb`
+
+**Option 4: Python Script Version**
+1. **Test environment**: `python3 run_analysis.py`
+2. **Follow instructions** for full setup
+
+### Troubleshooting
+- **Jupyter not found**: Use `setup_jupyter.sh` script or install via `pip install jupyter`
+- **Missing packages**: Install via `pip install -r requirements.txt`
+- **Can't open .ipynb**: Try Google Colab or VS Code with Jupyter extension
+- **Dataset missing**: Run `python download_data.py` first
 
 ## Improvements Made
 ### 🔧 Technical Improvements
