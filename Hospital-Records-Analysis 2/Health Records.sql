@@ -28,7 +28,15 @@ FROM hospitalrecords;
 -- Task 02: Data Standardization & Quality Assurance
 -- =====================================================
 
--- 1. Standardize column names (remove spaces, use snake_case)
+-- 1. Check current table structure first
+SHOW COLUMNS FROM hospitalrecords;
+
+-- 2. Standardize column names (remove spaces, use snake_case)
+-- Note: Run SHOW COLUMNS first to see actual column names, then modify this section accordingly
+
+-- Option A: If columns have spaces (original CSV import)
+-- Uncomment and run these if your columns still have spaces:
+/*
 ALTER TABLE hospitalrecords
 CHANGE COLUMN `Name` name VARCHAR(100),
 CHANGE COLUMN `Age` age INT,
@@ -45,6 +53,57 @@ CHANGE COLUMN `Admission Type` admission_type VARCHAR(50),
 CHANGE COLUMN `Discharge Date` discharge_date DATE,
 CHANGE COLUMN `Medication` medication VARCHAR(100),
 CHANGE COLUMN `Test Results` test_results VARCHAR(100);
+*/
+
+-- Option B: If columns are already renamed or have different names
+-- Check the output of SHOW COLUMNS and use these examples:
+/*
+ALTER TABLE hospitalrecords
+CHANGE COLUMN Name name VARCHAR(100),
+CHANGE COLUMN Age age INT,
+CHANGE COLUMN Gender gender VARCHAR(20),
+CHANGE COLUMN MedicalCondition medical_condition VARCHAR(100),
+CHANGE COLUMN BillingAmount billing_amount DECIMAL(10,2),
+CHANGE COLUMN BloodType blood_type VARCHAR(10),
+CHANGE COLUMN DateofAdmission admission_date DATE,
+CHANGE COLUMN Doctor doctor VARCHAR(100),
+CHANGE COLUMN Hospital hospital VARCHAR(100),
+CHANGE COLUMN InsuranceProvider insurance_provider VARCHAR(100),
+CHANGE COLUMN RoomNumber room_number VARCHAR(20),
+CHANGE COLUMN AdmissionType admission_type VARCHAR(50),
+CHANGE COLUMN DischargeDate discharge_date DATE,
+CHANGE COLUMN Medication medication VARCHAR(100),
+CHANGE COLUMN TestResults test_results VARCHAR(100);
+*/
+
+-- Option C: If table already has standardized names, skip the ALTER TABLE step
+-- and proceed directly to data quality assessment
+
+-- Alternative: Dynamic column detection and standardization
+-- First, check what columns actually exist and then run appropriate ALTER statements
+
+-- For troubleshooting: Show current table structure
+SELECT 
+    COLUMN_NAME,
+    DATA_TYPE,
+    IS_NULLABLE,
+    COLUMN_DEFAULT
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_SCHEMA = 'patientrecords' 
+  AND TABLE_NAME = 'hospitalrecords'
+ORDER BY ORDINAL_POSITION;
+
+-- Safe column standardization approach - check if column exists before altering
+-- Execute each ALTER statement individually after confirming column exists
+
+-- Example for Medical Condition (adjust based on actual column name):
+-- If the column is named 'Medical_Condition' instead of 'Medical Condition':
+-- ALTER TABLE hospitalrecords CHANGE COLUMN Medical_Condition medical_condition VARCHAR(100);
+
+-- If the column is named 'medical_condition' already, skip this step
+-- If the column is named differently, adjust accordingly
+
+-- Recommended approach: Run one ALTER statement at a time based on SHOW COLUMNS output
 
 -- 2. Comprehensive data quality assessment
 SELECT 
