@@ -470,5 +470,311 @@ HAVING patient_volume >= 50
 ORDER BY stay_variability DESC
 LIMIT 10;
 
+-- Task 04: Data Analysis & Key Business Questions
+-- =====================================================
+
+-- ✅ Question 1: What are the top 5 diagnoses contributing to high medical costs?
+SELECT 
+    'Top 5 Diagnoses Contributing to High Medical Costs' AS business_question,
+    medical_condition AS diagnosis,
+    COUNT(*) AS patient_count,
+    ROUND(SUM(billing_amount), 2) AS total_medical_cost,
+    ROUND(AVG(billing_amount), 2) AS avg_cost_per_patient,
+    ROUND(SUM(billing_amount) * 100.0 / (SELECT SUM(billing_amount) FROM hospitalrecords), 2) AS percentage_of_total_costs,
+    ROUND(AVG(stay_days), 1) AS avg_hospital_stay_days,
+    'High-cost diagnosis requiring cost optimization strategies' AS business_insight
+FROM hospitalrecords
+GROUP BY medical_condition
+ORDER BY total_medical_cost DESC
+LIMIT 5;
+
+-- ✅ Question 2: How does hospital stay duration vary by treatment type?
+SELECT 
+    'Hospital Stay Duration by Treatment Type' AS business_question,
+    medical_condition AS treatment_type,
+    COUNT(*) AS total_cases,
+    ROUND(AVG(stay_days), 1) AS avg_stay_duration_days,
+    ROUND(MIN(stay_days), 1) AS min_stay_days,
+    ROUND(MAX(stay_days), 1) AS max_stay_days,
+    ROUND(STDDEV(stay_days), 1) AS stay_duration_variability,
+    CASE 
+        WHEN AVG(stay_days) > 10 THEN 'Long-term treatment requiring resource planning'
+        WHEN AVG(stay_days) > 5 THEN 'Medium-term treatment with moderate resource needs'
+        ELSE 'Short-term treatment suitable for outpatient optimization'
+    END AS treatment_category_insight,
+    ROUND(AVG(billing_amount), 2) AS avg_cost_per_stay
+FROM hospitalrecords
+WHERE discharge_date IS NOT NULL  -- Only include completed stays
+GROUP BY medical_condition
+HAVING total_cases >= 10  -- Only conditions with sufficient data
+ORDER BY avg_stay_duration_days DESC
+LIMIT 15;
+
+-- ✅ Question 3: What is the average out-of-pocket expense for different patient groups?
+-- Note: Assuming self-pay patients represent out-of-pocket expenses
+SELECT 
+    'Out-of-Pocket Expenses by Patient Demographics' AS business_question,
+    age_group AS patient_group,
+    gender,
+    COUNT(*) AS patient_count,
+    
+    -- Self-pay patients (out-of-pocket)
+    SUM(CASE WHEN insurance_provider = 'Self-pay' THEN 1 ELSE 0 END) AS self_pay_patients,
+    ROUND(AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END), 2) AS avg_out_of_pocket_expense,
+    
+    -- All patients average
+    ROUND(AVG(billing_amount), 2) AS avg_total_expense,
+    
+    -- Insurance coverage analysis
+    ROUND(SUM(CASE WHEN insurance_provider != 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS insurance_coverage_percentage,
+    
+    CASE 
+        WHEN AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END) > 15000 
+        THEN 'High out-of-pocket burden requiring financial assistance programs'
+        WHEN AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END) > 8000 
+        THEN 'Moderate financial burden requiring payment plan options'
+        ELSE 'Manageable out-of-pocket expenses'
+    END AS financial_burden_insight
+FROM hospitalrecords
+GROUP BY age_group, gender
+ORDER BY avg_out_of_pocket_expense DESC;
+
+-- Additional Analysis: Regional Insurance Coverage Impact
+SELECT 
+    'Regional Insurance Coverage vs Out-of-Pocket Expenses' AS business_question,
+    hospital AS region,
+    COUNT(*) AS total_patients,
+    
+    -- Insurance coverage by region
+    ROUND(SUM(CASE WHEN insurance_provider != 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS insurance_coverage_rate,
+    
+    -- Out-of-pocket analysis
+    SUM(CASE WHEN insurance_provider = 'Self-pay' THEN 1 ELSE 0 END) AS uninsured_patients,
+    ROUND(AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END), 2) AS avg_out_of_pocket_cost,
+    ROUND(AVG(billing_amount), 2) AS avg_total_cost,
+    
+    CASE 
+        WHEN SUM(CASE WHEN insurance_provider != 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) > 80 
+        THEN 'High insurance coverage region with lower financial burden'
+        WHEN SUM(CASE WHEN insurance_provider != 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) > 60 
+        THEN 'Moderate insurance coverage requiring targeted assistance'
+        ELSE 'Low insurance coverage region requiring urgent intervention'
+    END AS regional_insight
+FROM hospitalrecords
+GROUP BY hospital
+ORDER BY insurance_coverage_rate DESC;
+
+-- Business Insights Analysis
+-- =====================================================
+
+-- Insight 1: Chronic Conditions vs Hospital Stay Duration
+SELECT 
+    'Chronic Conditions Analysis - Stay Duration Patterns' AS insight_analysis,
+    medical_condition,
+    COUNT(*) AS total_cases,
+    ROUND(AVG(stay_days), 1) AS avg_stay_days,
+    ROUND(AVG(age), 1) AS avg_patient_age,
+    ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
+    SUM(CASE WHEN stay_days > 7 THEN 1 ELSE 0 END) AS extended_stays,
+    ROUND(SUM(CASE WHEN stay_days > 7 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS extended_stay_percentage,
+    CASE 
+        WHEN medical_condition IN ('Diabetes', 'Hypertension', 'Arthritis', 'Asthma') 
+        THEN 'Chronic condition - tends to have longer stays and higher costs'
+        ELSE 'Acute condition - typically shorter duration'
+    END AS condition_type_insight
+FROM hospitalrecords
+GROUP BY medical_condition
+HAVING total_cases >= 20
+ORDER BY avg_stay_days DESC
+LIMIT 15;
+
+-- Insight 2: Insurance Coverage Impact on Financial Burden
+SELECT 
+    'Insurance Coverage Impact Analysis' AS insight_analysis,
+    insurance_provider,
+    COUNT(*) AS patients_covered,
+    ROUND(AVG(billing_amount), 2) AS avg_claim_amount,
+    ROUND(AVG(stay_days), 1) AS avg_stay_duration,
+    
+    -- Calculate presumed out-of-pocket (simplified assumption)
+    CASE 
+        WHEN insurance_provider = 'Self-pay' THEN ROUND(AVG(billing_amount), 2)
+        WHEN insurance_provider LIKE '%Medicare%' THEN ROUND(AVG(billing_amount) * 0.20, 2)  -- 20% copay
+        WHEN insurance_provider LIKE '%Medicaid%' THEN ROUND(AVG(billing_amount) * 0.05, 2)  -- 5% copay
+        ELSE ROUND(AVG(billing_amount) * 0.15, 2)  -- 15% average copay
+    END AS estimated_out_of_pocket,
+    
+    CASE 
+        WHEN insurance_provider = 'Self-pay' 
+        THEN 'No insurance - 100% out-of-pocket burden requiring financial assistance'
+        WHEN insurance_provider LIKE '%Medicaid%' 
+        THEN 'Low-income insurance with minimal out-of-pocket expenses'
+        WHEN insurance_provider LIKE '%Medicare%' 
+        THEN 'Senior coverage with moderate out-of-pocket expenses'
+        ELSE 'Private insurance with manageable out-of-pocket costs'
+    END AS coverage_impact_insight
+FROM hospitalrecords
+WHERE insurance_provider IS NOT NULL
+GROUP BY insurance_provider
+ORDER BY estimated_out_of_pocket DESC;
+
+-- Insight 3: Elderly Patients - Higher Costs and Longer Stays
+SELECT 
+    'Elderly Patient Healthcare Utilization Analysis' AS insight_analysis,
+    age_group,
+    COUNT(*) AS patient_count,
+    ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
+    ROUND(AVG(stay_days), 1) AS avg_hospital_stay,
+    SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_admissions,
+    ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_rate,
+    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition LIMIT 5) AS common_conditions,
+    CASE 
+        WHEN age_group = '66+ (Elderly)' 
+        THEN 'Elderly patients show significantly higher treatment costs and longer stays, requiring specialized geriatric care programs'
+        WHEN age_group = '51-65 (Senior)' 
+        THEN 'Senior patients beginning to show increased healthcare utilization patterns'
+        ELSE 'Younger demographics with lower healthcare utilization and costs'
+    END AS demographic_insight
+FROM hospitalrecords
+GROUP BY age_group
+ORDER BY 
+    CASE age_group
+        WHEN '0-17 (Pediatric)' THEN 1
+        WHEN '18-30 (Young Adult)' THEN 2
+        WHEN '31-50 (Adult)' THEN 3
+        WHEN '51-65 (Senior)' THEN 4
+        WHEN '66+ (Elderly)' THEN 5
+    END;
+
+-- Task 05: Strategic Recommendations Based on Data Analysis
+-- =====================================================
+
+-- ✅ Recommendation 1: Optimize Resource Allocation
+SELECT 
+    'Resource Allocation Optimization Strategy' AS recommendation_type,
+    hospital AS healthcare_facility,
+    COUNT(*) AS total_patient_volume,
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM hospitalrecords), 2) AS facility_market_share,
+    ROUND(AVG(stay_days), 1) AS avg_length_of_stay,
+    SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_volume,
+    ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_rate,
+    ROUND(SUM(billing_amount), 2) AS total_revenue,
+    COUNT(DISTINCT medical_condition) AS conditions_diversity,
+    CASE 
+        WHEN COUNT(*) > (SELECT AVG(patient_count) FROM (SELECT COUNT(*) as patient_count FROM hospitalrecords GROUP BY hospital) as subq) * 1.5
+        THEN 'HIGH PRIORITY: Focus additional resources - above average hospitalization rate'
+        WHEN COUNT(*) > (SELECT AVG(patient_count) FROM (SELECT COUNT(*) as patient_count FROM hospitalrecords GROUP BY hospital) as subq)
+        THEN 'MEDIUM PRIORITY: Monitor capacity and consider expansion'
+        ELSE 'STANDARD: Maintain current resource allocation'
+    END AS resource_allocation_recommendation
+FROM hospitalrecords
+GROUP BY hospital
+ORDER BY total_patient_volume DESC;
+
+-- ✅ Recommendation 2: Improve Insurance Coverage
+SELECT 
+    'Insurance Coverage Improvement Strategy' AS recommendation_type,
+    age_group AS target_demographic,
+    gender,
+    COUNT(*) AS total_patients,
+    SUM(CASE WHEN insurance_provider = 'Self-pay' THEN 1 ELSE 0 END) AS uninsured_patients,
+    ROUND(SUM(CASE WHEN insurance_provider = 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS uninsured_rate,
+    ROUND(AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END), 2) AS avg_uninsured_cost,
+    ROUND(SUM(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE 0 END), 2) AS total_uncompensated_care,
+    CASE 
+        WHEN SUM(CASE WHEN insurance_provider = 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) > 25
+        THEN 'URGENT: Implement targeted insurance enrollment programs and financial assistance'
+        WHEN SUM(CASE WHEN insurance_provider = 'Self-pay' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) > 15
+        THEN 'HIGH PRIORITY: Develop payment plan options and insurance navigation services'
+        ELSE 'MONITOR: Continue current coverage support programs'
+    END AS insurance_improvement_recommendation
+FROM hospitalrecords
+GROUP BY age_group, gender
+HAVING total_patients >= 50
+ORDER BY uninsured_rate DESC;
+
+-- ✅ Recommendation 3: Enhance Early Diagnosis Programs
+SELECT 
+    'Early Diagnosis & Preventive Care Strategy' AS recommendation_type,
+    medical_condition,
+    COUNT(*) AS total_cases,
+    SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_cases,
+    ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_rate,
+    ROUND(AVG(stay_days), 1) AS avg_stay_duration,
+    ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
+    ROUND(AVG(CASE WHEN admission_type = 'Emergency' THEN billing_amount ELSE NULL END), 2) AS avg_emergency_cost,
+    CASE 
+        WHEN SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) > 40
+        THEN 'CRITICAL: Implement aggressive early screening and prevention programs'
+        WHEN SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) > 25
+        THEN 'HIGH PRIORITY: Develop targeted prevention and early intervention programs'
+        ELSE 'MAINTAIN: Continue current preventive care protocols'
+    END AS prevention_recommendation,
+    CONCAT('Potential savings: $', ROUND((AVG(CASE WHEN admission_type = 'Emergency' THEN billing_amount ELSE NULL END) - 
+                                          AVG(CASE WHEN admission_type != 'Emergency' THEN billing_amount ELSE NULL END)) * 
+                                         SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 0.3, 2)) AS estimated_cost_savings
+FROM hospitalrecords
+GROUP BY medical_condition
+HAVING total_cases >= 30
+ORDER BY emergency_rate DESC
+LIMIT 10;
+
+-- ✅ Recommendation 4: Cost Optimization Strategies
+SELECT 
+    'Cost Optimization & Control Strategy' AS recommendation_type,
+    medical_condition,
+    medication,
+    COUNT(*) AS treatment_frequency,
+    ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
+    ROUND(AVG(stay_days), 1) AS avg_length_of_stay,
+    ROUND(MAX(billing_amount), 2) AS max_treatment_cost,
+    ROUND(STDDEV(billing_amount), 2) AS cost_variability,
+    ROUND(SUM(billing_amount), 2) AS total_treatment_costs,
+    CASE 
+        WHEN AVG(billing_amount) > 30000 AND STDDEV(billing_amount) > 15000
+        THEN 'HIGH COST + HIGH VARIABILITY: Implement treatment protocols and cost standards'
+        WHEN AVG(billing_amount) > 30000
+        THEN 'HIGH COST: Review treatment efficiency and negotiate better supplier rates'
+        WHEN STDDEV(billing_amount) > 15000
+        THEN 'HIGH VARIABILITY: Standardize treatment protocols to reduce cost variations'
+        ELSE 'MONITOR: Continue current cost management practices'
+    END AS cost_optimization_recommendation,
+    CASE 
+        WHEN AVG(billing_amount) > 30000
+        THEN CONCAT('Potential annual savings: $', ROUND(SUM(billing_amount) * 0.15, 2), ' (15% cost reduction)')
+        WHEN AVG(billing_amount) > 15000
+        THEN CONCAT('Potential annual savings: $', ROUND(SUM(billing_amount) * 0.10, 2), ' (10% cost reduction)')
+        ELSE 'Focus on maintaining current efficiency'
+    END AS savings_potential
+FROM hospitalrecords
+WHERE medication IS NOT NULL
+GROUP BY medical_condition, medication
+HAVING treatment_frequency >= 10
+ORDER BY avg_treatment_cost DESC
+LIMIT 15;
+
+-- Executive Summary of Business Insights and Recommendations
+SELECT 
+    'EXECUTIVE SUMMARY - Key Business Insights & Recommendations' AS summary_type,
+    CONCAT(
+        'TOP 5 COST DRIVERS: ',
+        (SELECT GROUP_CONCAT(medical_condition ORDER BY SUM(billing_amount) DESC LIMIT 5) 
+         FROM hospitalrecords GROUP BY medical_condition ORDER BY SUM(billing_amount) DESC LIMIT 5)
+    ) AS top_cost_drivers,
+    CONCAT(
+        'AVERAGE OUT-OF-POCKET: $',
+        ROUND(AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END), 2)
+    ) AS uninsured_burden,
+    CONCAT(
+        'ELDERLY COST PREMIUM: ',
+        ROUND(
+            (SELECT AVG(billing_amount) FROM hospitalrecords WHERE age_group = '66+ (Elderly)') - 
+            (SELECT AVG(billing_amount) FROM hospitalrecords WHERE age_group != '66+ (Elderly)'), 2
+        ), '% higher costs'
+    ) AS elderly_cost_impact,
+    'RECOMMENDATIONS: 1) Target high-cost conditions with prevention programs, 2) Expand insurance coverage for uninsured populations, 3) Implement geriatric care optimization, 4) Focus resources on high-volume facilities' AS key_recommendations
+FROM hospitalrecords
+LIMIT 1;
+
 -- Display view verification
 SELECT 'Healthcare Analytics View Verification' AS check_type, COUNT(*) AS total_records FROM healthcare_analytics_dashboard;
