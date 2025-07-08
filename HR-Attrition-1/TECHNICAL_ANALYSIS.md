@@ -292,6 +292,6 @@ The model provides a solid foundation for strategic HR decision-making while hig
 ---
 
 **Report Prepared by:** Abdullah  
-**Institution:** EIA (Excellence in Innovation Academy)  
+**Institution:** EIA (Emerging India Analytics)  
 **Date:** 2025  
-**Contact:** abdullah@eia.edu
+**Contact:** abdulllahyasser@outlook.com

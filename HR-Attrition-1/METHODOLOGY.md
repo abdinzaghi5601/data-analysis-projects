@@ -438,7 +438,7 @@ requirements = [
 ---
 
 **Methodology Developed by:** Abdullah  
-**Institution:** EIA (Excellence in Innovation Academy)  
+**Institution:** EIA (Emerging India Analytics)  
 **Version:** 1.0  
 **Last Updated:** 2025  
-**Contact:** abdullah@eia.edu
+**Contact:** abdulllahyasser@outlook.com

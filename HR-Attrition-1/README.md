@@ -132,8 +132,8 @@ pip install pandas numpy matplotlib seaborn scikit-learn jupyter
 
 ## Contributors
 **Primary Analyst**: Abdullah  
-**Institution**: EIA (Excellence in Innovation Academy)  
-**Contact**: abdullah@eia.edu
+**Institution**: EIA (Emerging India Analytics)  
+**Contact**: abdulllahyasser@outlook.com
 
 ## License
 This project is for educational and research purposes. Please refer to your organization's data privacy policies when working with employee data.

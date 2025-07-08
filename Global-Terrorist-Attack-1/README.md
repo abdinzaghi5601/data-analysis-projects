@@ -224,8 +224,8 @@ pip install plotly
 
 ## Contributors
 **Primary Analyst**: Abdullah  
-**Institution**: EIA (Excellence in Innovation Academy)  
-**Contact**: abdullah@eia.edu
+**Institution**: EIA (Emerging India Analytics)  
+**Contact**: abdulllahyasser@outlook.com
 
 **Specializations**:
 - Advanced machine learning and statistical modeling
@@ -263,5 +263,5 @@ If you use this analysis in your research, please cite:
 ```
 Abdullah (2025). Global Terrorism Database Analysis: Advanced Machine Learning 
 Approaches for Attack Prediction and Risk Assessment. 
-EIA (Excellence in Innovation Academy).
+EIA (Emerging India Analytics).
 ```

@@ -84,8 +84,8 @@ The datasets used in these projects are for educational and analysis purposes. P
 ## Contributors
 
 **Primary Developer**: Abdullah  
-**Institution**: EIA (Excellence in Innovation Academy)  
-**Email**: abdullah@eia.edu
+**Institution**: EIA (Emerging India Analytics)  
+**Email**: abdulllahyasser@outlook.com
 
 ### Contributions
 - Complete project development and implementation across all analysis domains
@@ -95,13 +95,13 @@ The datasets used in these projects are for educational and analysis purposes. P
 - Data visualization and interactive dashboard creation
 
 ### Academic Supervision
-**EIA (Excellence in Innovation Academy)**
+**EIA (Emerging India Analytics)**
 - Research methodology guidance and oversight
 - Quality assurance and validation protocols
 - Academic standards compliance and review
 
 ## Project Attribution
 
-All projects in this repository were developed by Abdullah as part of advanced data science research at EIA (Excellence in Innovation Academy). The work represents original analysis, implementation, and documentation completed under academic supervision.
+All projects in this repository were developed by Abdullah as part of advanced data science research at EIA (Emerging India Analytics). The work represents original analysis, implementation, and documentation completed under academic supervision.
 
 For detailed contributor information, see [CONTRIBUTORS.md](CONTRIBUTORS.md)

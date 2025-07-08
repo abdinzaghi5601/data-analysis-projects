@@ -4,8 +4,8 @@
 
 ### Lead Developer & Data Scientist
 **Abdullah**
-- Email: abdullah@eia.edu
-- Institution: EIA (Excellence in Innovation Academy)
+- Email: abdulllahyasser@outlook.com
+- Institution: EIA (Emerging India Analytics)
 - Role: Lead Data Scientist, Machine Learning Engineer
 - Contributions: 
   - Complete project architecture and implementation
@@ -14,14 +14,14 @@
   - Technical documentation and methodology
 
 ### Institution
-**EIA - Excellence in Innovation Academy**
+**EIA - Emerging India Analytics**
 - Academic supervision and guidance
 - Research methodology oversight
 - Quality assurance and validation
 
 ## Project Attribution
 
-This project was developed as part of advanced data science coursework at EIA (Excellence in Innovation Academy) under the supervision of the academic faculty. All analysis, code development, and documentation were completed by Abdullah as the primary researcher and developer.
+This project was developed as part of advanced data science coursework at EIA (Emerging India Analytics) under the supervision of the academic faculty. All analysis, code development, and documentation were completed by Abdullah as the primary researcher and developer.
 
 ## Acknowledgments
 
