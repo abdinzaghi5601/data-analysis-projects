@@ -208,12 +208,81 @@ SET stay_days = DATEDIFF(
 
 ## 📊 SQL Analysis Highlights
 
-The `Health Records.sql` file contains comprehensive queries covering:
-- **Data Cleaning**: Duplicate removal and standardization procedures
-- **Patient Analysis**: Demographics and distribution patterns
-- **Medical Analytics**: Diagnosis and treatment pattern identification
-- **Financial Analysis**: Cost trends and insurance coverage evaluation
-- **Operational Insights**: Hospital efficiency and resource utilization
+The `Health Records.sql` file contains 8 comprehensive analytical tasks:
+
+### **Task 01: Database Setup & Healthcare Data Structure**
+- Table structure verification and data import validation
+- Column standardization and healthcare data integrity checks
+- Infrastructure setup for comprehensive analytics
+
+### **Task 02: Data Standardization & Quality Assurance**
+- Dynamic column detection using INFORMATION_SCHEMA
+- Comprehensive data quality assessment with missing value analysis
+- Gender standardization and data cleaning procedures
+- Healthcare-specific data validation rules
+
+### **Task 03: Exploratory Data Analysis (EDA)**
+- Patient demographics distribution and age group analysis
+- Medical condition frequency and prevalence calculations
+- Hospital utilization patterns and admission type analysis
+- Cost distribution and billing amount statistical analysis
+
+### **Task 04: Business Questions Analysis**
+- **Question 1**: Top 5 diagnoses contributing to high medical costs
+- **Question 2**: Hospital stay duration variation by treatment type
+- **Question 3**: Average out-of-pocket expenses for different patient groups
+- **Question 4**: Insurance coverage impact on healthcare costs
+- Comprehensive business intelligence queries with actionable insights
+
+### **Task 05: Strategic Recommendations**
+- **Resource Allocation**: Optimization strategies for high-cost conditions
+- **Insurance Coverage**: Expansion programs for uninsured populations
+- **Early Diagnosis**: Prevention programs for chronic conditions
+- **Cost Optimization**: Value-based care implementation strategies
+
+### **Task 06: Correlation & Statistical Analysis**
+- Age group vs. medical cost correlation analysis
+- Treatment type vs. hospital stay duration relationships
+- Insurance provider vs. patient outcome correlations
+- Statistical significance testing for healthcare metrics
+
+### **Task 07: Temporal Analysis & Trends**
+- Monthly admission patterns and seasonal healthcare trends
+- Year-over-year cost variation analysis
+- Treatment duration trends by medical condition
+- Emergency vs. elective admission pattern analysis
+
+### **Task 08: Business Intelligence Integration**
+- Comprehensive dashboard view creation for Power BI integration
+- Executive summary queries with KPI aggregation
+- Healthcare analytics framework for ongoing monitoring
+- Advanced reporting queries for stakeholder communication
+
+## 🏥 Advanced Healthcare Analytics Framework
+
+### **Clinical Decision Support Queries**
+- **Risk Stratification**: Patient risk scoring based on age, condition, and stay duration
+- **Treatment Effectiveness**: Medication efficacy analysis by condition and outcome
+- **Resource Optimization**: Hospital bed utilization and staff allocation analytics
+- **Quality Metrics**: Length of stay optimization and readmission risk assessment
+
+### **Population Health Analytics**
+- **Disease Burden Analysis**: Community health impact assessment by condition
+- **Demographic Health Patterns**: Age and gender-specific healthcare trends
+- **Preventive Care Opportunities**: Early intervention program identification
+- **Health Equity Analysis**: Insurance coverage and access disparities
+
+### **Financial Intelligence**
+- **Cost Driver Analysis**: Identification of high-impact expense categories
+- **Insurance Performance**: Provider-specific coverage and claim efficiency
+- **Revenue Optimization**: Billing pattern analysis and revenue cycle improvement
+- **Budget Planning**: Predictive cost modeling for healthcare resource allocation
+
+### **Operational Excellence**
+- **Emergency Care Analytics**: Admission pattern optimization and resource planning
+- **Capacity Management**: Real-time bed availability and patient flow optimization
+- **Staff Utilization**: Doctor workload distribution and specialty demand analysis
+- **Quality Assurance**: Clinical outcome monitoring and improvement identification
 
 ## 🎯 Business Impact
 
@@ -245,12 +314,104 @@ The `Health Records.sql` file contains comprehensive queries covering:
 - Deploy real-time monitoring dashboards
 - Establish value-based care partnerships
 
+## 🔍 SQL Query Reference Guide
+
+### **Key Business Intelligence Queries**
+
+#### **Executive Summary Query**
+```sql
+SELECT 
+    'EXECUTIVE SUMMARY - Key Business Insights & Recommendations' AS summary_type,
+    (SELECT GROUP_CONCAT(medical_condition ORDER BY total_cost DESC SEPARATOR ', ') 
+     FROM (SELECT medical_condition, SUM(billing_amount) as total_cost 
+           FROM hospitalrecords GROUP BY medical_condition ORDER BY total_cost DESC LIMIT 5) 
+     AS top_conditions) AS top_cost_drivers,
+    CONCAT('$', ROUND((SELECT AVG(billing_amount) FROM hospitalrecords 
+                       WHERE insurance_provider = 'Self-pay'), 2)) AS avg_out_of_pocket_expense;
+```
+
+#### **High-Cost Diagnosis Analysis**
+```sql
+SELECT 
+    medical_condition AS diagnosis,
+    COUNT(*) AS patient_count,
+    ROUND(SUM(billing_amount), 2) AS total_medical_cost,
+    ROUND(AVG(billing_amount), 2) AS avg_cost_per_patient,
+    ROUND(AVG(stay_days), 1) AS avg_hospital_stay_days
+FROM hospitalrecords
+GROUP BY medical_condition
+ORDER BY total_medical_cost DESC
+LIMIT 5;
+```
+
+#### **Patient Demographics and Cost Correlation**
+```sql
+SELECT 
+    age_group AS patient_group,
+    gender,
+    COUNT(*) AS patient_count,
+    ROUND(AVG(billing_amount), 2) AS avg_medical_cost,
+    ROUND(AVG(stay_days), 1) AS avg_length_of_stay,
+    ROUND(STDDEV(billing_amount), 2) AS cost_variability
+FROM hospitalrecords
+GROUP BY age_group, gender
+ORDER BY avg_medical_cost DESC;
+```
+
+#### **Insurance Coverage Impact Analysis**
+```sql
+SELECT 
+    insurance_provider,
+    COUNT(*) AS patients_covered,
+    ROUND(SUM(billing_amount), 2) AS total_claims_amount,
+    ROUND(AVG(billing_amount), 2) AS avg_claim_per_patient,
+    ROUND(AVG(stay_days), 1) AS avg_stay_duration
+FROM hospitalrecords
+GROUP BY insurance_provider
+ORDER BY total_claims_amount DESC;
+```
+
+### **Advanced Analytics Queries**
+
+#### **Treatment Effectiveness Analysis**
+```sql
+SELECT 
+    medical_condition,
+    medication,
+    COUNT(*) AS treatment_cases,
+    ROUND(AVG(stay_days), 1) AS avg_recovery_time,
+    ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
+    ROUND(STDDEV(stay_days), 1) AS recovery_consistency
+FROM hospitalrecords
+GROUP BY medical_condition, medication
+HAVING treatment_cases >= 10
+ORDER BY medical_condition, avg_recovery_time;
+```
+
+#### **Hospital Efficiency Metrics**
+```sql
+SELECT 
+    hospital,
+    COUNT(*) AS total_patients,
+    ROUND(AVG(stay_days), 1) AS avg_length_of_stay,
+    ROUND(AVG(billing_amount), 2) AS avg_cost_per_patient,
+    COUNT(DISTINCT medical_condition) AS conditions_treated,
+    SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_cases,
+    ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_rate
+FROM hospitalrecords
+GROUP BY hospital
+ORDER BY total_patients DESC;
+```
+
 ## 📝 Technical Notes
 
 - **Database**: MySQL with optimized healthcare query performance
+- **Query Architecture**: 8-task analytical framework with 50+ comprehensive queries
 - **Visualization**: Power BI with responsive healthcare dashboard design
 - **Data Quality**: Comprehensive validation and healthcare compliance procedures
 - **Scalability**: Framework designed for expanding healthcare datasets
+- **Error Handling**: Dynamic column detection and graceful degradation for missing data
+- **Performance**: Optimized queries with proper indexing and aggregation strategies
 
 ## 🔍 Future Enhancements
 
