@@ -250,7 +250,7 @@ SELECT
     COUNT(*) AS patient_count,
     ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM hospitalrecords), 2) AS percentage,
     ROUND(AVG(billing_amount), 2) AS avg_cost,
-    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition LIMIT 5) AS common_conditions
+    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition SEPARATOR ', ') AS common_conditions
 FROM hospitalrecords
 WHERE blood_type IS NOT NULL
 GROUP BY blood_type
@@ -358,7 +358,7 @@ SELECT
     COUNT(*) AS emergency_cases,
     ROUND(AVG(billing_amount), 2) AS avg_emergency_cost,
     ROUND(AVG(stay_days), 1) AS avg_emergency_stay,
-    GROUP_CONCAT(DISTINCT hospital ORDER BY hospital LIMIT 3) AS treating_hospitals
+    GROUP_CONCAT(DISTINCT hospital ORDER BY hospital SEPARATOR ', ') AS treating_hospitals
 FROM hospitalrecords
 WHERE admission_type = 'Emergency'
 GROUP BY medical_condition
@@ -374,7 +374,7 @@ SELECT
     COUNT(DISTINCT medical_condition) AS conditions_treated,
     ROUND(AVG(stay_days), 1) AS avg_patient_stay,
     ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
-    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition LIMIT 3) AS primary_specialties
+    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition SEPARATOR ', ') AS primary_specialties
 FROM hospitalrecords
 GROUP BY doctor
 HAVING patient_count >= 10
@@ -391,7 +391,7 @@ SELECT
     COUNT(*) AS prescription_count,
     ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM hospitalrecords WHERE medication IS NOT NULL), 2) AS prescription_percentage,
     ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
-    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition LIMIT 3) AS common_conditions
+    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition SEPARATOR ', ') AS common_conditions
 FROM hospitalrecords
 WHERE medication IS NOT NULL
 GROUP BY medication
@@ -681,7 +681,7 @@ SELECT
     ROUND(AVG(stay_days), 1) AS avg_hospital_stay,
     SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) AS emergency_admissions,
     ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_rate,
-    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition LIMIT 5) AS common_conditions,
+    GROUP_CONCAT(DISTINCT medical_condition ORDER BY medical_condition SEPARATOR ', ') AS common_conditions,
     CASE 
         WHEN age_group = '66+ (Elderly)' 
         THEN 'Elderly patients show significantly higher treatment costs and longer stays, requiring specialized geriatric care programs'
@@ -812,7 +812,7 @@ SELECT
     'EXECUTIVE SUMMARY - Key Business Insights & Recommendations' AS summary_type,
     CONCAT(
         'TOP 5 COST DRIVERS: ',
-        (SELECT GROUP_CONCAT(medical_condition ORDER BY SUM(billing_amount) DESC LIMIT 5) 
+        (SELECT GROUP_CONCAT(medical_condition ORDER BY SUM(billing_amount) DESC SEPARATOR ', ') 
          FROM hospitalrecords GROUP BY medical_condition ORDER BY SUM(billing_amount) DESC LIMIT 5)
     ) AS top_cost_drivers,
     CONCAT(
