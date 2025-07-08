@@ -3,6 +3,14 @@
 -- SQL Script for Medical Data Processing & Business Intelligence
 -- =====================================================
 
+-- NOTE: This script has been adapted to work with your existing table structure.
+-- Your column names: test_results, stay_days, room_number, name, medication, medical_condition, 
+-- insurance_provider, hospital, gender, doctor, discharge_date, blood_type, 
+-- billing_amount, age_group, age, admission_type, admission_date
+-- 
+-- If you get "Unknown column 'name'" errors, it means the 'name' column doesn't exist in your table.
+-- Please run: SHOW COLUMNS FROM hospitalrecords; to verify your actual column names.
+
 CREATE DATABASE IF NOT EXISTS PatientRecords;
 USE patientrecords;
 
@@ -16,7 +24,7 @@ SHOW COLUMNS FROM hospitalrecords;
 SELECT 
     'Healthcare Data Import Verification' AS analysis_type,
     COUNT(*) AS total_patient_records,
-    COUNT(DISTINCT name) AS unique_patients,
+    -- COUNT(DISTINCT name) AS unique_patients,  -- Commented out if name column doesn't exist
     MIN(admission_date) AS earliest_admission,
     MAX(admission_date) AS latest_admission,
     COUNT(DISTINCT medical_condition) AS total_conditions,
@@ -67,7 +75,7 @@ WHERE TABLE_SCHEMA = 'patientrecords'
 SELECT 
     'Healthcare Data Quality Assessment' AS analysis_type,
     COUNT(*) AS total_records,
-    COUNT(*) - COUNT(name) AS missing_names,
+    -- COUNT(*) - COUNT(name) AS missing_names,  -- Commented out if name column doesn't exist
     COUNT(*) - COUNT(age) AS missing_ages,
     COUNT(*) - COUNT(gender) AS missing_genders,
     COUNT(*) - COUNT(blood_type) AS missing_blood_types,
@@ -99,12 +107,14 @@ SET gender = CASE
     ELSE 'Other'
 END;
 
--- Standardize patient names (Title Case)
+-- Standardize patient names (Title Case) - Commented out if name column doesn't exist
+/*
 UPDATE hospitalrecords
 SET name = CONCAT(
     UPPER(SUBSTRING(TRIM(name), 1, 1)),
     LOWER(SUBSTRING(TRIM(name), 2))
 );
+*/
 
 -- Handle missing critical data
 UPDATE hospitalrecords 
@@ -456,7 +466,7 @@ LIMIT 10;
 -- Create comprehensive view for dashboard integration
 CREATE OR REPLACE VIEW healthcare_analytics_dashboard AS
 SELECT 
-    name,
+    -- name,  -- Commented out if name column doesn't exist
     age,
     age_group,
     gender,
@@ -495,11 +505,15 @@ SELECT
     DAYNAME(admission_date) AS admission_day_of_week
 FROM hospitalrecords;
 
+-- Check which columns actually exist in your table
+SHOW COLUMNS FROM hospitalrecords;
+
 -- Executive healthcare summary for dashboard KPIs
+-- Note: If 'name' column doesn't exist, we'll use total records instead of unique patients
 SELECT 
     'Executive Healthcare Dashboard Summary' AS report_type,
     COUNT(*) AS total_patient_records,
-    COUNT(DISTINCT name) AS unique_patients,
+    -- COUNT(DISTINCT name) AS unique_patients,  -- Commented out if name column doesn't exist
     COUNT(DISTINCT medical_condition) AS total_conditions_treated,
     COUNT(DISTINCT hospital) AS healthcare_facilities,
     ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
@@ -507,6 +521,22 @@ SELECT
     ROUND(AVG(stay_days), 1) AS avg_length_of_stay,
     ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_admission_rate,
     ROUND(AVG(age), 1) AS avg_patient_age;
+
+-- Alternative version if you have a patient ID column instead of name:
+-- Replace 'name' with your actual patient identifier column
+/*
+SELECT 
+    'Executive Healthcare Dashboard Summary' AS report_type,
+    COUNT(*) AS total_patient_records,
+    COUNT(DISTINCT patient_id) AS unique_patients,  -- Use your actual patient ID column
+    COUNT(DISTINCT medical_condition) AS total_conditions_treated,
+    COUNT(DISTINCT hospital) AS healthcare_facilities,
+    ROUND(AVG(billing_amount), 2) AS avg_treatment_cost,
+    ROUND(SUM(billing_amount), 2) AS total_healthcare_revenue,
+    ROUND(AVG(stay_days), 1) AS avg_length_of_stay,
+    ROUND(SUM(CASE WHEN admission_type = 'Emergency' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS emergency_admission_rate,
+    ROUND(AVG(age), 1) AS avg_patient_age;
+*/
 
 -- Healthcare quality metrics
 SELECT 
@@ -810,25 +840,24 @@ LIMIT 15;
 -- Executive Summary of Business Insights and Recommendations
 SELECT 
     'EXECUTIVE SUMMARY - Key Business Insights & Recommendations' AS summary_type,
-    CONCAT(
-        'TOP 5 COST DRIVERS: ',
-        (SELECT GROUP_CONCAT(medical_condition ORDER BY SUM(billing_amount) DESC SEPARATOR ', ') 
-         FROM hospitalrecords GROUP BY medical_condition ORDER BY SUM(billing_amount) DESC LIMIT 5)
+    (SELECT GROUP_CONCAT(medical_condition ORDER BY total_cost DESC SEPARATOR ', ') 
+     FROM (SELECT medical_condition, SUM(billing_amount) as total_cost 
+           FROM hospitalrecords 
+           GROUP BY medical_condition 
+           ORDER BY total_cost DESC 
+           LIMIT 5) AS top_conditions
     ) AS top_cost_drivers,
-    CONCAT(
-        'AVERAGE OUT-OF-POCKET: $',
-        ROUND(AVG(CASE WHEN insurance_provider = 'Self-pay' THEN billing_amount ELSE NULL END), 2)
-    ) AS uninsured_burden,
-    CONCAT(
-        'ELDERLY COST PREMIUM: ',
-        ROUND(
-            (SELECT AVG(billing_amount) FROM hospitalrecords WHERE age_group = '66+ (Elderly)') - 
-            (SELECT AVG(billing_amount) FROM hospitalrecords WHERE age_group != '66+ (Elderly)'), 2
-        ), '% higher costs'
-    ) AS elderly_cost_impact,
-    'RECOMMENDATIONS: 1) Target high-cost conditions with prevention programs, 2) Expand insurance coverage for uninsured populations, 3) Implement geriatric care optimization, 4) Focus resources on high-volume facilities' AS key_recommendations
-FROM hospitalrecords
-LIMIT 1;
+    CONCAT('$', 
+        ROUND((SELECT AVG(billing_amount) 
+               FROM hospitalrecords 
+               WHERE insurance_provider = 'Self-pay'), 2)
+    ) AS avg_out_of_pocket_expense,
+    CONCAT('$', 
+        ROUND((SELECT AVG(billing_amount) FROM hospitalrecords WHERE age_group = '66+ (Elderly)') - 
+              (SELECT AVG(billing_amount) FROM hospitalrecords WHERE age_group != '66+ (Elderly)'), 2),
+        ' higher costs for elderly'
+    ) AS elderly_cost_premium,
+    'RECOMMENDATIONS: 1) Target high-cost conditions with prevention programs, 2) Expand insurance coverage for uninsured populations, 3) Implement geriatric care optimization, 4) Focus resources on high-volume facilities' AS key_recommendations;
 
 -- Display view verification
 SELECT 'Healthcare Analytics View Verification' AS check_type, COUNT(*) AS total_records FROM healthcare_analytics_dashboard;
