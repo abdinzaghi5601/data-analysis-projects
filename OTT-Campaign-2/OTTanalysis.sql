@@ -231,7 +231,7 @@ SELECT * FROM campaigndata;
 -- Create performance view
 CREATE VIEW campaign_performanc AS
 SELECT 
-	Campaign_ID
+	Campaign_ID,
     Campaign_Type,
     Channel_Used,
     Location,
