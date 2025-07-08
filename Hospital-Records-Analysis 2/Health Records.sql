@@ -28,82 +28,40 @@ FROM hospitalrecords;
 -- Task 02: Data Standardization & Quality Assurance
 -- =====================================================
 
--- 1. Check current table structure first
+-- 1. Verify current table structure
 SHOW COLUMNS FROM hospitalrecords;
 
--- 2. Standardize column names (remove spaces, use snake_case)
--- Note: Run SHOW COLUMNS first to see actual column names, then modify this section accordingly
+-- 2. Table Structure Confirmed - Columns Already Standardized
+-- Your table already has snake_case column names:
+-- test_results, stay_days, room_number, name, medication, medical_condition, 
+-- insurance_provider, hospital, gender, doctor, discharge_date, blood_type, 
+-- billing_amount, age_group, age, admission_type, admission_date
 
--- Option A: If columns have spaces (original CSV import)
--- Uncomment and run these if your columns still have spaces:
-/*
-ALTER TABLE hospitalrecords
-CHANGE COLUMN `Name` name VARCHAR(100),
-CHANGE COLUMN `Age` age INT,
-CHANGE COLUMN `Gender` gender VARCHAR(20),
-CHANGE COLUMN `Medical Condition` medical_condition VARCHAR(100),
-CHANGE COLUMN `Billing Amount` billing_amount DECIMAL(10,2),
-CHANGE COLUMN `Blood Type` blood_type VARCHAR(10),
-CHANGE COLUMN `Date of Admission` admission_date DATE,
-CHANGE COLUMN `Doctor` doctor VARCHAR(100),
-CHANGE COLUMN `Hospital` hospital VARCHAR(100),
-CHANGE COLUMN `Insurance Provider` insurance_provider VARCHAR(100),
-CHANGE COLUMN `Room Number` room_number VARCHAR(20),
-CHANGE COLUMN `Admission Type` admission_type VARCHAR(50),
-CHANGE COLUMN `Discharge Date` discharge_date DATE,
-CHANGE COLUMN `Medication` medication VARCHAR(100),
-CHANGE COLUMN `Test Results` test_results VARCHAR(100);
-*/
+-- No ALTER TABLE statements needed - proceeding with analysis
 
--- Option B: If columns are already renamed or have different names
--- Check the output of SHOW COLUMNS and use these examples:
-/*
-ALTER TABLE hospitalrecords
-CHANGE COLUMN Name name VARCHAR(100),
-CHANGE COLUMN Age age INT,
-CHANGE COLUMN Gender gender VARCHAR(20),
-CHANGE COLUMN MedicalCondition medical_condition VARCHAR(100),
-CHANGE COLUMN BillingAmount billing_amount DECIMAL(10,2),
-CHANGE COLUMN BloodType blood_type VARCHAR(10),
-CHANGE COLUMN DateofAdmission admission_date DATE,
-CHANGE COLUMN Doctor doctor VARCHAR(100),
-CHANGE COLUMN Hospital hospital VARCHAR(100),
-CHANGE COLUMN InsuranceProvider insurance_provider VARCHAR(100),
-CHANGE COLUMN RoomNumber room_number VARCHAR(20),
-CHANGE COLUMN AdmissionType admission_type VARCHAR(50),
-CHANGE COLUMN DischargeDate discharge_date DATE,
-CHANGE COLUMN Medication medication VARCHAR(100),
-CHANGE COLUMN TestResults test_results VARCHAR(100);
-*/
+-- 3. Add missing derived columns if they don't exist
+-- Check if these columns already exist, if not, add them:
 
--- Option C: If table already has standardized names, skip the ALTER TABLE step
--- and proceed directly to data quality assessment
-
--- Alternative: Dynamic column detection and standardization
--- First, check what columns actually exist and then run appropriate ALTER statements
-
--- For troubleshooting: Show current table structure
-SELECT 
-    COLUMN_NAME,
-    DATA_TYPE,
-    IS_NULLABLE,
-    COLUMN_DEFAULT
+-- Add cost_category column if not exists
+SELECT COUNT(*) 
 FROM INFORMATION_SCHEMA.COLUMNS 
 WHERE TABLE_SCHEMA = 'patientrecords' 
-  AND TABLE_NAME = 'hospitalrecords'
-ORDER BY ORDINAL_POSITION;
+  AND TABLE_NAME = 'hospitalrecords' 
+  AND COLUMN_NAME = 'cost_category';
 
--- Safe column standardization approach - check if column exists before altering
--- Execute each ALTER statement individually after confirming column exists
+-- If the above returns 0, run this:
+-- ALTER TABLE hospitalrecords ADD COLUMN cost_category VARCHAR(30);
 
--- Example for Medical Condition (adjust based on actual column name):
--- If the column is named 'Medical_Condition' instead of 'Medical Condition':
--- ALTER TABLE hospitalrecords CHANGE COLUMN Medical_Condition medical_condition VARCHAR(100);
+-- Add admission_year and admission_month if not exists  
+SELECT COUNT(*) 
+FROM INFORMATION_SCHEMA.COLUMNS 
+WHERE TABLE_SCHEMA = 'patientrecords' 
+  AND TABLE_NAME = 'hospitalrecords' 
+  AND COLUMN_NAME IN ('admission_year', 'admission_month');
 
--- If the column is named 'medical_condition' already, skip this step
--- If the column is named differently, adjust accordingly
-
--- Recommended approach: Run one ALTER statement at a time based on SHOW COLUMNS output
+-- If the above returns less than 2, run these:
+-- ALTER TABLE hospitalrecords ADD COLUMN admission_year INT;
+-- ALTER TABLE hospitalrecords ADD COLUMN admission_month INT;
 
 -- 2. Comprehensive data quality assessment
 SELECT 
@@ -156,22 +114,18 @@ SET
     insurance_provider = IFNULL(insurance_provider, 'Self-pay'),
     discharge_date = IFNULL(discharge_date, admission_date);
 
--- 5. Create derived healthcare metrics
-ALTER TABLE hospitalrecords
-ADD COLUMN stay_days INT,
-ADD COLUMN age_group VARCHAR(30),
-ADD COLUMN cost_category VARCHAR(30),
-ADD COLUMN admission_year INT,
-ADD COLUMN admission_month INT;
+-- 5. Create or update derived healthcare metrics
+-- Note: stay_days and age_group columns already exist in your table
 
--- Calculate length of stay
+-- Update stay_days if needed (in case some records don't have this calculated)
 UPDATE hospitalrecords
 SET stay_days = DATEDIFF(
     IFNULL(discharge_date, CURDATE()), 
     admission_date
-);
+)
+WHERE stay_days IS NULL OR stay_days = 0;
 
--- Create age groups for demographic analysis
+-- Update age_group if needed or if format needs standardization
 UPDATE hospitalrecords
 SET age_group = 
     CASE 
@@ -180,9 +134,23 @@ SET age_group =
         WHEN age BETWEEN 31 AND 50 THEN '31-50 (Adult)'
         WHEN age BETWEEN 51 AND 65 THEN '51-65 (Senior)'
         ELSE '66+ (Elderly)'
-    END;
+    END
+WHERE age_group IS NULL OR age_group NOT LIKE '%(%';
 
--- Categorize costs for financial analysis
+-- Add cost_category column only if it doesn't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'patientrecords' 
+       AND TABLE_NAME = 'hospitalrecords' 
+       AND COLUMN_NAME = 'cost_category') = 0,
+    'ALTER TABLE hospitalrecords ADD COLUMN cost_category VARCHAR(30)',
+    'SELECT "cost_category column already exists" AS status'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Update cost_category
 UPDATE hospitalrecords
 SET cost_category = 
     CASE 
@@ -190,13 +158,40 @@ SET cost_category =
         WHEN billing_amount BETWEEN 5000 AND 20000 THEN 'Medium Cost ($5K-$20K)'
         WHEN billing_amount BETWEEN 20000 AND 50000 THEN 'High Cost ($20K-$50K)'
         ELSE 'Very High Cost (>$50K)'
-    END;
+    END
+WHERE cost_category IS NULL;
+
+-- Add temporal columns only if they don't exist
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'patientrecords' 
+       AND TABLE_NAME = 'hospitalrecords' 
+       AND COLUMN_NAME = 'admission_year') = 0,
+    'ALTER TABLE hospitalrecords ADD COLUMN admission_year INT',
+    'SELECT "admission_year column already exists" AS status'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_SCHEMA = 'patientrecords' 
+       AND TABLE_NAME = 'hospitalrecords' 
+       AND COLUMN_NAME = 'admission_month') = 0,
+    'ALTER TABLE hospitalrecords ADD COLUMN admission_month INT',
+    'SELECT "admission_month column already exists" AS status'
+));
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Extract temporal components
 UPDATE hospitalrecords
 SET 
     admission_year = YEAR(admission_date),
-    admission_month = MONTH(admission_date);
+    admission_month = MONTH(admission_date)
+WHERE admission_year IS NULL OR admission_month IS NULL;
 
 -- Task 03: Exploratory Data Analysis (EDA)
 -- =====================================================
