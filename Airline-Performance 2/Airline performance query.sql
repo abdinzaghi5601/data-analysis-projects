@@ -3,72 +3,191 @@
 -- SQL Script for Data Preprocessing & Analysis
 -- =====================================================
 
-USE airline_data;
+CREATE DATABASE IF NOT EXISTS airline_performance;
+USE airline_performance;
 
--- Task 01: Data Preprocessing & SQL Setup
 -- =====================================================
+-- TASK 01: DATA PREPROCESSING & SQL SETUP
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Load dataset into SQL, create structured table, clean data, format fields, remove duplicates
+-- BUSINESS PURPOSE: Establish clean, structured foundation for airline performance analysis
+-- EXPECTED OUTCOME: Properly structured and validated airline performance database
 
 -- 1. Create structured table and define primary keys
+CREATE TABLE IF NOT EXISTS airlinedata (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    Year INT NOT NULL,
+    Month INT NOT NULL,
+    DayofMonth INT NOT NULL,
+    DayOfWeek INT NOT NULL,
+    DepTime INT,
+    ArrTime INT,
+    UniqueCarrier VARCHAR(10) NOT NULL,
+    FlightNum INT NOT NULL,
+    TailNum VARCHAR(10),
+    ActualElapsedTime INT,
+    AirTime INT,
+    ArrDelay INT,
+    DepDelay INT,
+    Origin VARCHAR(5) NOT NULL,
+    Dest VARCHAR(5) NOT NULL,
+    Distance INT,
+    TaxiIn INT,
+    TaxiOut INT,
+    Cancelled BOOLEAN DEFAULT FALSE,
+    CancellationCode VARCHAR(1),
+    Diverted BOOLEAN DEFAULT FALSE,
+    -- Additional formatted fields
+    FlightDate DATE,
+    DepartureTime TIME,
+    ArrivalTime TIME,
+    formatted_departure DATETIME,
+    formatted_arrival DATETIME,
+    INDEX idx_carrier (UniqueCarrier),
+    INDEX idx_origin (Origin),
+    INDEX idx_dest (Dest),
+    INDEX idx_date (FlightDate),
+    INDEX idx_performance (ArrDelay, DepDelay)
+);
+
+-- Load data from CSV file
+-- LOAD DATA LOCAL INFILE 'Airline Performance Dataset.csv' 
+-- INTO TABLE airlinedata (Year, Month, DayofMonth, DayOfWeek, DepTime, ArrTime, UniqueCarrier, FlightNum, TailNum, ActualElapsedTime, AirTime, ArrDelay, DepDelay, Origin, Dest, Distance, TaxiIn, TaxiOut, Cancelled, CancellationCode, Diverted)
+-- FIELDS TERMINATED BY ',' 
+-- OPTIONALLY ENCLOSED BY '"' 
+-- LINES TERMINATED BY '\n' 
+-- IGNORE 1 ROWS;
+
 -- Verify table structure
 SHOW COLUMNS FROM airlinedata;
 
--- Add primary key if not exists
--- ALTER TABLE airlinedata ADD COLUMN id INT AUTO_INCREMENT PRIMARY KEY FIRST;
-
--- 2. Check for missing values and data quality
+-- 2. Check for missing or inconsistent data and clean using SQL queries
 SELECT 
     'Data Quality Assessment' AS analysis_type,
     COUNT(*) AS total_rows,
-    SUM(CASE WHEN DepTime IS NULL THEN 1 ELSE 0 END) AS missing_dep_time,
-    SUM(CASE WHEN ArrTime IS NULL THEN 1 ELSE 0 END) AS missing_arr_time,
+    SUM(CASE WHEN DepTime IS NULL OR DepTime = 0 THEN 1 ELSE 0 END) AS missing_dep_time,
+    SUM(CASE WHEN ArrTime IS NULL OR ArrTime = 0 THEN 1 ELSE 0 END) AS missing_arr_time,
     SUM(CASE WHEN ArrDelay IS NULL THEN 1 ELSE 0 END) AS missing_arr_delays,
     SUM(CASE WHEN DepDelay IS NULL THEN 1 ELSE 0 END) AS missing_dep_delays,
-    SUM(CASE WHEN UniqueCarrier IS NULL THEN 1 ELSE 0 END) AS missing_carrier,
-    SUM(CASE WHEN Origin IS NULL THEN 1 ELSE 0 END) AS missing_origin,
-    SUM(CASE WHEN Dest IS NULL THEN 1 ELSE 0 END) AS missing_destination
+    SUM(CASE WHEN UniqueCarrier IS NULL OR UniqueCarrier = '' THEN 1 ELSE 0 END) AS missing_carrier,
+    SUM(CASE WHEN Origin IS NULL OR Origin = '' THEN 1 ELSE 0 END) AS missing_origin,
+    SUM(CASE WHEN Dest IS NULL OR Dest = '' THEN 1 ELSE 0 END) AS missing_destination,
+    SUM(CASE WHEN Distance IS NULL OR Distance <= 0 THEN 1 ELSE 0 END) AS invalid_distance
 FROM airlinedata;
 
--- 3. Format date and time fields (convert string to proper datetime)
-ALTER TABLE airlinedata
-ADD COLUMN formatted_flightdate DATE,
-ADD COLUMN formatted_departure DATETIME,
-ADD COLUMN formatted_arrival DATETIME;
+-- Data consistency validation
+SELECT 
+    'Data Consistency Validation' AS analysis_type,
+    SUM(CASE WHEN ArrDelay < -60 THEN 1 ELSE 0 END) AS unrealistic_early_arrivals,
+    SUM(CASE WHEN DepDelay < -60 THEN 1 ELSE 0 END) AS unrealistic_early_departures,
+    SUM(CASE WHEN ArrDelay > 1440 THEN 1 ELSE 0 END) AS extreme_delays_over_24h,
+    SUM(CASE WHEN Month < 1 OR Month > 12 THEN 1 ELSE 0 END) AS invalid_months,
+    SUM(CASE WHEN DayOfWeek < 1 OR DayOfWeek > 7 THEN 1 ELSE 0 END) AS invalid_day_of_week,
+    SUM(CASE WHEN DayofMonth < 1 OR DayofMonth > 31 THEN 1 ELSE 0 END) AS invalid_day_of_month
+FROM airlinedata;
 
--- Clean time format anomalies first
+-- Clean inconsistent data
+SET SQL_SAFE_UPDATES = 0;
+
+-- Handle missing delay values (set to 0 if flight wasn't cancelled)
+UPDATE airlinedata 
+SET 
+    ArrDelay = CASE WHEN ArrDelay IS NULL AND Cancelled = 0 THEN 0 ELSE ArrDelay END,
+    DepDelay = CASE WHEN DepDelay IS NULL AND Cancelled = 0 THEN 0 ELSE DepDelay END;
+
+-- Clean extreme outliers (delays over 24 hours set to reasonable maximum)
+UPDATE airlinedata 
+SET 
+    ArrDelay = CASE WHEN ArrDelay > 1440 THEN 1440 ELSE ArrDelay END,
+    DepDelay = CASE WHEN DepDelay > 1440 THEN 1440 ELSE DepDelay END;
+
+-- Handle missing times for non-cancelled flights
+UPDATE airlinedata 
+SET 
+    DepTime = CASE WHEN DepTime IS NULL AND Cancelled = 0 THEN 1200 ELSE DepTime END,
+    ArrTime = CASE WHEN ArrTime IS NULL AND Cancelled = 0 THEN 1400 ELSE ArrTime END;
+
+-- 3. Format date and time fields and convert to proper datetime
+-- Create FlightDate from Year, Month, DayofMonth
+UPDATE airlinedata
+SET FlightDate = STR_TO_DATE(CONCAT(Year, '-', Month, '-', DayofMonth), '%Y-%m-%d')
+WHERE FlightDate IS NULL;
+
+-- Convert time integers to proper TIME format
+-- DepTime and ArrTime are in HHMM format (e.g., 1435 = 14:35)
 UPDATE airlinedata
 SET 
-    DepartureTime = REPLACE(DepartureTime, '24:', '00:'),
-    ArrivalTime = REPLACE(ArrivalTime, '24:', '00:')
-WHERE DepartureTime LIKE '24:%' OR ArrivalTime LIKE '24:%';
+    DepartureTime = TIME(STR_TO_DATE(LPAD(DepTime, 4, '0'), '%H%i')),
+    ArrivalTime = TIME(STR_TO_DATE(LPAD(ArrTime, 4, '0'), '%H%i'))
+WHERE DepTime IS NOT NULL AND ArrTime IS NOT NULL AND Cancelled = 0;
 
--- Convert to proper datetime format
+-- Create full datetime fields
 UPDATE airlinedata
 SET 
-    formatted_flightdate = STR_TO_DATE(FlightDate, '%Y-%m-%d'),
-    formatted_departure = STR_TO_DATE(CONCAT(FlightDate, ' ', DepartureTime), '%Y-%m-%d %H:%i:%s'),
-    formatted_arrival = STR_TO_DATE(CONCAT(FlightDate, ' ', ArrivalTime), '%Y-%m-%d %H:%i:%s');
+    formatted_departure = TIMESTAMP(FlightDate, DepartureTime),
+    formatted_arrival = TIMESTAMP(FlightDate, ArrivalTime)
+WHERE DepartureTime IS NOT NULL AND ArrivalTime IS NOT NULL AND Cancelled = 0;
+
+-- Handle overnight flights (arrival next day)
+UPDATE airlinedata
+SET formatted_arrival = DATE_ADD(formatted_arrival, INTERVAL 1 DAY)
+WHERE formatted_arrival < formatted_departure AND Cancelled = 0;
 
 -- 4. Remove duplicates (if any)
 -- Check for duplicate records
 SELECT 
-    FlightDate, UniqueCarrier, Origin, Dest, DepartureTime, COUNT(*) as duplicate_count
+    'Duplicate Check' AS analysis_type,
+    FlightDate, UniqueCarrier, FlightNum, Origin, Dest, DepTime, COUNT(*) as duplicate_count
 FROM airlinedata
-GROUP BY FlightDate, UniqueCarrier, Origin, Dest, DepartureTime
+GROUP BY FlightDate, UniqueCarrier, FlightNum, Origin, Dest, DepTime
 HAVING COUNT(*) > 1;
 
--- Task 02: Exploratory Data Analysis (EDA) Using SQL
--- =====================================================
+-- Remove duplicates keeping the first occurrence
+DELETE t1 FROM airlinedata t1
+INNER JOIN airlinedata t2 
+WHERE 
+    t1.id > t2.id AND
+    t1.FlightDate = t2.FlightDate AND
+    t1.UniqueCarrier = t2.UniqueCarrier AND
+    t1.FlightNum = t2.FlightNum AND
+    t1.Origin = t2.Origin AND
+    t1.Dest = t2.Dest AND
+    t1.DepTime = t2.DepTime;
 
--- 1. Calculate key performance metrics
--- Total number of flights
+-- Final data quality summary
+SELECT 
+    'Final Data Quality Summary' AS analysis_type,
+    COUNT(*) AS total_clean_records,
+    SUM(CASE WHEN Cancelled = 1 THEN 1 ELSE 0 END) AS cancelled_flights,
+    SUM(CASE WHEN Cancelled = 0 THEN 1 ELSE 0 END) AS completed_flights,
+    MIN(FlightDate) AS earliest_flight,
+    MAX(FlightDate) AS latest_flight,
+    COUNT(DISTINCT UniqueCarrier) AS total_carriers,
+    COUNT(DISTINCT Origin) AS total_origin_airports,
+    COUNT(DISTINCT Dest) AS total_destination_airports
+FROM airlinedata;
+
+-- =====================================================
+-- TASK 02: EXPLORATORY DATA ANALYSIS (EDA) USING SQL
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Calculate key performance metrics, identify busiest airports, analyze delay trends
+-- BUSINESS PURPOSE: Understand flight operations, performance patterns, and identify optimization opportunities
+-- EXPECTED OUTCOME: Comprehensive insights into airline performance, delays, and operational efficiency
+
+-- 1. Calculate key performance metrics such as total number of flights, average delay time, and delay causes
+
+-- Total number of flights and basic metrics
 SELECT 
     'Flight Volume Metrics' AS metric_type,
     COUNT(*) AS total_flights,
     COUNT(DISTINCT UniqueCarrier) AS total_carriers,
     COUNT(DISTINCT Origin) AS total_origin_airports,
     COUNT(DISTINCT Dest) AS total_destination_airports,
-    MIN(formatted_flightdate) AS earliest_date,
-    MAX(formatted_flightdate) AS latest_date
+    MIN(FlightDate) AS earliest_date,
+    MAX(FlightDate) AS latest_date,
+    COUNT(DISTINCT CONCAT(Origin, '-', Dest)) AS unique_routes
 FROM airlinedata;
 
 -- 2. Average delay time and performance by carrier
@@ -89,19 +208,23 @@ FROM airlinedata
 GROUP BY UniqueCarrier
 ORDER BY avg_arrival_delay DESC;
 
--- 3. Delay causes and performance categorization
+-- Delay causes analysis
 SELECT 
-    'Flight Performance Distribution' AS analysis_type,
+    'Delay Causes Analysis' AS analysis_type,
     CASE 
-        WHEN ArrDelay > 0 AND DepDelay > 0 THEN 'Both Delays'
-        WHEN ArrDelay > 0 THEN 'Arrival Delay Only'
-        WHEN DepDelay > 0 THEN 'Departure Delay Only'
-        ELSE 'On Time'
-    END AS delay_category,
+        WHEN Cancelled = 1 THEN 'Flight Cancelled'
+        WHEN ArrDelay > 0 AND DepDelay > 0 THEN 'Both Departure & Arrival Delays'
+        WHEN ArrDelay > 0 AND DepDelay <= 0 THEN 'Arrival Delay Only (En-route issues)'
+        WHEN DepDelay > 0 AND ArrDelay <= 0 THEN 'Departure Delay Only (Recovered in flight)'
+        WHEN ArrDelay <= 0 AND DepDelay <= 0 THEN 'On Time Performance'
+        ELSE 'Unknown'
+    END AS delay_cause_category,
     COUNT(*) AS flight_count,
-    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM airlinedata), 2) AS percentage
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM airlinedata), 2) AS percentage_of_total,
+    ROUND(AVG(CASE WHEN ArrDelay IS NOT NULL THEN ArrDelay ELSE 0 END), 2) AS avg_arrival_delay,
+    ROUND(AVG(CASE WHEN DepDelay IS NOT NULL THEN DepDelay ELSE 0 END), 2) AS avg_departure_delay
 FROM airlinedata
-GROUP BY delay_category
+GROUP BY delay_cause_category
 ORDER BY flight_count DESC;
 
 -- Delay severity analysis
@@ -122,20 +245,23 @@ GROUP BY delay_severity
 ORDER BY AVG(ArrDelay);
 
 
--- 4. Identify busiest airports and analyze delay trends
+-- 2. Identify the busiest airports and analyze delay trends
+
 -- Top 10 busiest origin airports with performance metrics
 SELECT 
-    'Top Busiest Origin Airports' AS analysis_type,
-    Origin,
-    COUNT(*) AS departure_count,
-    AVG(DepDelay) AS avg_departure_delay,
-    STDDEV(DepDelay) AS delay_consistency,
+    'Top 10 Busiest Origin Airports' AS analysis_type,
+    Origin AS airport_code,
+    COUNT(*) AS total_departures,
+    ROUND(AVG(DepDelay), 2) AS avg_departure_delay,
+    ROUND(STDDEV(DepDelay), 2) AS delay_consistency,
     SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) AS significant_delays,
     SUM(CASE WHEN Cancelled = 1 THEN 1 ELSE 0 END) AS cancellations,
-    ROUND(SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS significant_delay_rate
+    ROUND(SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS significant_delay_rate,
+    ROUND(SUM(CASE WHEN Cancelled = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS cancellation_rate,
+    'High traffic requires operational optimization' AS business_insight
 FROM airlinedata
 GROUP BY Origin
-ORDER BY departure_count DESC
+ORDER BY total_departures DESC
 LIMIT 10;
 
 -- Top 10 busiest destination airports with performance metrics
@@ -317,65 +443,105 @@ SELECT
 FROM airlinedata
 WHERE formatted_flightdate IS NOT NULL;
 
--- Task 04: Business Intelligence Insights
 -- =====================================================
+-- TASK 04: GENERATING INSIGHTS & RECOMMENDATIONS
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Analyze data to generate actionable insights on airline delays, airport congestion, delay causes, and peak hour impacts
+-- BUSINESS PURPOSE: Provide strategic recommendations for operational improvements and resource optimization
+-- EXPECTED OUTCOME: Data-driven insights with specific recommendations for airline performance enhancement
 
--- Key insights for recommendations
--- Which airlines experience the highest delays?
+-- 1. Which airlines experience the highest delays?
 SELECT 
-    'Airlines with Highest Delays' AS insight_category,
-    UniqueCarrier,
-    AVG(ArrDelay) AS avg_delay,
-    COUNT(*) AS flight_count,
-    'Requires immediate intervention' AS recommendation
+    'Airlines with Highest Delays Analysis' AS insight_category,
+    UniqueCarrier AS airline_code,
+    COUNT(*) AS total_flights,
+    ROUND(AVG(ArrDelay), 2) AS avg_arrival_delay_minutes,
+    ROUND(AVG(DepDelay), 2) AS avg_departure_delay_minutes,
+    SUM(CASE WHEN ArrDelay > 15 THEN 1 ELSE 0 END) AS significant_delays,
+    ROUND(SUM(CASE WHEN ArrDelay > 15 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS significant_delay_rate,
+    ROUND(SUM(CASE WHEN Cancelled = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS cancellation_rate,
+    CASE 
+        WHEN AVG(ArrDelay) > 15 THEN 'URGENT: Implement operational efficiency programs'
+        WHEN AVG(ArrDelay) > 10 THEN 'HIGH PRIORITY: Schedule optimization needed'
+        ELSE 'MAINTAIN: Continue current performance levels'
+    END AS recommendation
 FROM airlinedata
 GROUP BY UniqueCarrier
-HAVING flight_count >= 500
-ORDER BY avg_delay DESC
-LIMIT 5;
+HAVING total_flights >= 100
+ORDER BY avg_arrival_delay_minutes DESC
+LIMIT 10;
 
--- Which airports have the most congestion?
+-- 2. Which airports have the most congestion?
 SELECT 
-    'Most Congested Airports' AS insight_category,
-    Origin AS airport,
+    'Most Congested Airports Analysis' AS insight_category,
+    Origin AS airport_code,
     COUNT(*) AS traffic_volume,
-    AVG(DepDelay) AS avg_delay,
-    'Infrastructure optimization needed' AS recommendation
+    ROUND(AVG(DepDelay), 2) AS avg_departure_delay,
+    ROUND(AVG(ArrDelay), 2) AS avg_arrival_delay,
+    SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) AS significant_departure_delays,
+    ROUND(SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS departure_delay_rate,
+    ROUND(SUM(CASE WHEN Cancelled = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS cancellation_rate,
+    CASE 
+        WHEN COUNT(*) > 1000 AND AVG(DepDelay) > 10 THEN 'CRITICAL: Infrastructure expansion required'
+        WHEN COUNT(*) > 500 AND AVG(DepDelay) > 8 THEN 'HIGH: Resource optimization needed'
+        WHEN AVG(DepDelay) > 5 THEN 'MODERATE: Operational improvements recommended'
+        ELSE 'MAINTAIN: Current performance acceptable'
+    END AS congestion_recommendation
 FROM airlinedata
 GROUP BY Origin
-ORDER BY traffic_volume DESC, avg_delay DESC
-LIMIT 5;
+ORDER BY traffic_volume DESC, avg_departure_delay DESC
+LIMIT 10;
 
--- What are the primary causes of delays?
+-- 3. What are the primary causes of delays?
 SELECT 
-    'Primary Delay Causes' AS insight_category,
+    'Primary Delay Causes Analysis' AS insight_category,
     CASE 
-        WHEN ArrDelay > 0 AND DepDelay > 0 THEN 'Operational Issues'
-        WHEN ArrDelay > 0 THEN 'Arrival Congestion'
-        WHEN DepDelay > 0 THEN 'Departure Issues'
-        ELSE 'On Schedule'
-    END AS delay_cause,
+        WHEN Cancelled = 1 THEN 'Flight Cancellations'
+        WHEN ArrDelay > 0 AND DepDelay > 0 THEN 'Systemic Operational Issues'
+        WHEN ArrDelay > 0 AND DepDelay <= 0 THEN 'En-route/Air Traffic Issues'
+        WHEN DepDelay > 0 AND ArrDelay <= 0 THEN 'Ground Operations Issues'
+        WHEN ArrDelay <= 0 AND DepDelay <= 0 THEN 'On-Time Performance'
+        ELSE 'Unknown/Data Issues'
+    END AS delay_cause_category,
     COUNT(*) AS occurrence_count,
-    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM airlinedata), 2) AS percentage
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM airlinedata), 2) AS percentage_of_total,
+    ROUND(AVG(CASE WHEN ArrDelay IS NOT NULL THEN ArrDelay ELSE 0 END), 2) AS avg_arrival_delay,
+    ROUND(AVG(CASE WHEN DepDelay IS NOT NULL THEN DepDelay ELSE 0 END), 2) AS avg_departure_delay,
+    CASE 
+        WHEN COUNT(*) * 100.0 / (SELECT COUNT(*) FROM airlinedata) > 30 THEN 'HIGH IMPACT: Immediate intervention required'
+        WHEN COUNT(*) * 100.0 / (SELECT COUNT(*) FROM airlinedata) > 15 THEN 'MEDIUM IMPACT: Process improvement needed'
+        ELSE 'LOW IMPACT: Monitor and maintain'
+    END AS priority_recommendation
 FROM airlinedata
-GROUP BY delay_cause
+GROUP BY delay_cause_category
 ORDER BY occurrence_count DESC;
 
--- How do peak flight hours impact delays?
+-- 4. How do peak flight hours impact delays?
 SELECT 
-    'Peak Hour Impact on Delays' AS insight_category,
+    'Peak Hour Impact on Delays Analysis' AS insight_category,
     CASE 
-        WHEN HOUR(formatted_departure) BETWEEN 7 AND 9 THEN 'Morning Rush (7-9 AM)'
-        WHEN HOUR(formatted_departure) BETWEEN 17 AND 19 THEN 'Evening Rush (5-7 PM)'
-        ELSE 'Non-Peak Hours'
-    END AS hour_category,
+        WHEN HOUR(formatted_departure) BETWEEN 6 AND 9 THEN 'Morning Rush (6-9 AM)'
+        WHEN HOUR(formatted_departure) BETWEEN 16 AND 19 THEN 'Evening Rush (4-7 PM)'
+        WHEN HOUR(formatted_departure) BETWEEN 10 AND 15 THEN 'Midday Operations (10 AM-3 PM)'
+        WHEN HOUR(formatted_departure) BETWEEN 20 AND 23 THEN 'Night Operations (8-11 PM)'
+        ELSE 'Late Night/Early Morning (12-5 AM)'
+    END AS time_period,
     COUNT(*) AS flight_count,
-    AVG(ArrDelay) AS avg_delay,
-    'Schedule optimization opportunity' AS recommendation
+    ROUND(AVG(DepDelay), 2) AS avg_departure_delay,
+    ROUND(AVG(ArrDelay), 2) AS avg_arrival_delay,
+    SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) AS significant_delays,
+    ROUND(SUM(CASE WHEN DepDelay > 15 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS delay_rate,
+    CASE 
+        WHEN AVG(DepDelay) > 15 THEN 'URGENT: Redistribute flights to off-peak hours'
+        WHEN AVG(DepDelay) > 10 THEN 'HIGH: Increase staffing and resources during peak'
+        WHEN AVG(DepDelay) > 5 THEN 'MODERATE: Optimize scheduling and gate assignments'
+        ELSE 'MAINTAIN: Current performance acceptable'
+    END AS peak_hour_recommendation
 FROM airlinedata
 WHERE formatted_departure IS NOT NULL
-GROUP BY hour_category
-ORDER BY avg_delay DESC;
+GROUP BY time_period
+ORDER BY avg_departure_delay DESC;
 
 -- Summary statistics for executive dashboard
 SELECT 
