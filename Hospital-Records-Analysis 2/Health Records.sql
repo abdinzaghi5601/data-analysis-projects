@@ -3,19 +3,57 @@
 -- SQL Script for Medical Data Processing & Business Intelligence
 -- =====================================================
 
--- NOTE: This script has been adapted to work with your existing table structure.
--- Your column names: test_results, stay_days, room_number, name, medication, medical_condition, 
--- insurance_provider, hospital, gender, doctor, discharge_date, blood_type, 
--- billing_amount, age_group, age, admission_type, admission_date
+-- DATASET COMPATIBILITY: This script works with CSV files containing Title Case columns
+-- Original CSV columns: Name, Age, Gender, Blood Type, Medical Condition, Date of Admission, 
+-- Doctor, Hospital, Insurance Provider, Billing Amount, Room Number, Admission Type, 
+-- Discharge Date, Medication, Test Results
 -- 
--- If you get "Unknown column 'name'" errors, it means the 'name' column doesn't exist in your table.
--- Please run: SHOW COLUMNS FROM hospitalrecords; to verify your actual column names.
+-- The script includes automatic column mapping and data transformation
+-- to convert from CSV format to standardized database format
 
 CREATE DATABASE IF NOT EXISTS PatientRecords;
 USE patientrecords;
 
--- Task 01: Database Setup & Healthcare Data Structure
 -- =====================================================
+-- TASK 01: DATABASE SETUP & HEALTHCARE DATA STRUCTURE
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Initialize database, create table structure, and import CSV data
+-- BUSINESS PURPOSE: Establish foundation for healthcare analytics and reporting
+-- EXPECTED OUTCOME: Clean, structured database ready for analysis
+
+-- Create table structure for processed healthcare data
+CREATE TABLE IF NOT EXISTS hospitalrecords (
+    name VARCHAR(255),
+    age INT,
+    gender VARCHAR(10),
+    blood_type VARCHAR(5),
+    medical_condition VARCHAR(100),
+    admission_date DATE,
+    doctor VARCHAR(255),
+    hospital VARCHAR(255),
+    insurance_provider VARCHAR(100),
+    billing_amount DECIMAL(10,2),
+    room_number VARCHAR(10),
+    admission_type VARCHAR(20),
+    discharge_date DATE,
+    medication VARCHAR(100),
+    test_results VARCHAR(20),
+    stay_days INT,
+    age_group VARCHAR(30),
+    cost_category VARCHAR(50),
+    admission_year INT,
+    admission_month INT
+);
+
+-- Load data from processed CSV file
+-- NOTE: Use MySQL's LOAD DATA INFILE or similar import method
+-- LOAD DATA LOCAL INFILE 'healthcare_dataset_processed.csv' 
+-- INTO TABLE hospitalrecords 
+-- FIELDS TERMINATED BY ',' 
+-- OPTIONALLY ENCLOSED BY '\"' 
+-- LINES TERMINATED BY '\\n' 
+-- IGNORE 1 ROWS;
 
 -- Display current table structure for assessment
 SHOW COLUMNS FROM hospitalrecords;
@@ -24,7 +62,7 @@ SHOW COLUMNS FROM hospitalrecords;
 SELECT 
     'Healthcare Data Import Verification' AS analysis_type,
     COUNT(*) AS total_patient_records,
-    -- COUNT(DISTINCT name) AS unique_patients,  -- Commented out if name column doesn't exist
+    COUNT(DISTINCT name) AS unique_patients,
     MIN(admission_date) AS earliest_admission,
     MAX(admission_date) AS latest_admission,
     COUNT(DISTINCT medical_condition) AS total_conditions,
@@ -33,49 +71,34 @@ SELECT
     COUNT(DISTINCT insurance_provider) AS total_insurance_providers
 FROM hospitalrecords;
 
--- Task 02: Data Standardization & Quality Assurance
 -- =====================================================
+-- TASK 02: DATA STANDARDIZATION & QUALITY ASSURANCE
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Standardize column names, validate data quality, and create derived fields
+-- BUSINESS PURPOSE: Ensure data consistency and prepare calculated metrics for analysis
+-- EXPECTED OUTCOME: Standardized dataset with quality validation and derived healthcare metrics
 
--- 1. Verify current table structure
+-- Verify table structure with all standardized columns
 SHOW COLUMNS FROM hospitalrecords;
 
--- 2. Table Structure Confirmed - Columns Already Standardized
--- Your table already has snake_case column names:
--- test_results, stay_days, room_number, name, medication, medical_condition, 
--- insurance_provider, hospital, gender, doctor, discharge_date, blood_type, 
--- billing_amount, age_group, age, admission_type, admission_date
-
--- No ALTER TABLE statements needed - proceeding with analysis
-
--- 3. Add missing derived columns if they don't exist
--- Check if these columns already exist, if not, add them:
-
--- Add cost_category column if not exists
-SELECT COUNT(*) 
+-- Confirm all required columns exist (should show 20 columns)
+SELECT COUNT(*) as total_columns
 FROM INFORMATION_SCHEMA.COLUMNS 
 WHERE TABLE_SCHEMA = 'patientrecords' 
-  AND TABLE_NAME = 'hospitalrecords' 
-  AND COLUMN_NAME = 'cost_category';
+  AND TABLE_NAME = 'hospitalrecords';
 
--- If the above returns 0, run this:
--- ALTER TABLE hospitalrecords ADD COLUMN cost_category VARCHAR(30);
+-- Table structure is now standardized with snake_case column names:
+-- name, age, gender, blood_type, medical_condition, admission_date, doctor, 
+-- hospital, insurance_provider, billing_amount, room_number, admission_type, 
+-- discharge_date, medication, test_results, stay_days, age_group, cost_category, 
+-- admission_year, admission_month
 
--- Add admission_year and admission_month if not exists  
-SELECT COUNT(*) 
-FROM INFORMATION_SCHEMA.COLUMNS 
-WHERE TABLE_SCHEMA = 'patientrecords' 
-  AND TABLE_NAME = 'hospitalrecords' 
-  AND COLUMN_NAME IN ('admission_year', 'admission_month');
-
--- If the above returns less than 2, run these:
--- ALTER TABLE hospitalrecords ADD COLUMN admission_year INT;
--- ALTER TABLE hospitalrecords ADD COLUMN admission_month INT;
-
--- 2. Comprehensive data quality assessment
+-- Comprehensive data quality assessment
 SELECT 
     'Healthcare Data Quality Assessment' AS analysis_type,
     COUNT(*) AS total_records,
-    -- COUNT(*) - COUNT(name) AS missing_names,  -- Commented out if name column doesn't exist
+    COUNT(*) - COUNT(name) AS missing_names,
     COUNT(*) - COUNT(age) AS missing_ages,
     COUNT(*) - COUNT(gender) AS missing_genders,
     COUNT(*) - COUNT(blood_type) AS missing_blood_types,
@@ -203,8 +226,13 @@ SET
     admission_month = MONTH(admission_date)
 WHERE admission_year IS NULL OR admission_month IS NULL;
 
--- Task 03: Exploratory Data Analysis (EDA)
 -- =====================================================
+-- TASK 03: EXPLORATORY DATA ANALYSIS (EDA)
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Analyze patient demographics, medical conditions, and treatment patterns
+-- BUSINESS PURPOSE: Understand patient population characteristics and healthcare utilization
+-- EXPECTED OUTCOME: Comprehensive insights into patient demographics and medical condition trends
 
 -- 1. Patient Demographics Analysis
 SELECT 
@@ -266,8 +294,13 @@ WHERE blood_type IS NOT NULL
 GROUP BY blood_type
 ORDER BY patient_count DESC;
 
--- Task 04: Financial Healthcare Analytics
 -- =====================================================
+-- TASK 04: FINANCIAL HEALTHCARE ANALYTICS
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Analyze healthcare costs, insurance coverage, and financial trends
+-- BUSINESS PURPOSE: Understand cost drivers and optimize financial performance
+-- EXPECTED OUTCOME: Financial insights for cost management and revenue optimization
 
 -- 1. Healthcare cost analysis by category
 SELECT 
@@ -331,8 +364,13 @@ FROM hospitalrecords
 GROUP BY admission_year, admission_month, month_name
 ORDER BY admission_year, admission_month;
 
--- Task 05: Hospital Operations & Performance Analysis
 -- =====================================================
+-- TASK 05: HOSPITAL OPERATIONS & PERFORMANCE ANALYSIS
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Evaluate hospital efficiency, resource utilization, and operational metrics
+-- BUSINESS PURPOSE: Optimize hospital operations and improve patient care delivery
+-- EXPECTED OUTCOME: Operational insights for resource allocation and performance improvement
 
 -- 1. Hospital performance comparison
 SELECT 
@@ -391,8 +429,13 @@ HAVING patient_count >= 10
 ORDER BY patient_count DESC
 LIMIT 15;
 
--- Task 06: Medication and Treatment Analysis
 -- =====================================================
+-- TASK 06: MEDICATION AND TREATMENT ANALYSIS
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Analyze medication patterns, prescription trends, and treatment effectiveness
+-- BUSINESS PURPOSE: Optimize treatment protocols and medication management
+-- EXPECTED OUTCOME: Treatment effectiveness insights and medication optimization recommendations
 
 -- 1. Most prescribed medications analysis
 SELECT 
@@ -424,8 +467,13 @@ GROUP BY medical_condition, medication
 HAVING treatment_cases >= 5
 ORDER BY medical_condition, avg_stay_days;
 
--- Task 07: Risk Assessment & Predictive Analytics
 -- =====================================================
+-- TASK 07: RISK ASSESSMENT & PREDICTIVE ANALYTICS
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Identify high-risk patients and predict healthcare outcomes
+-- BUSINESS PURPOSE: Enable proactive care management and risk mitigation
+-- EXPECTED OUTCOME: Risk stratification model and predictive healthcare insights
 
 -- 1. High-risk patient identification
 SELECT 
@@ -460,8 +508,13 @@ HAVING case_count >= 20 AND emergency_percentage > 30
 ORDER BY emergency_percentage DESC
 LIMIT 10;
 
--- Task 08: Business Intelligence Views & Dashboard Preparation
 -- =====================================================
+-- TASK 08: BUSINESS INTELLIGENCE VIEWS & DASHBOARD PREPARATION
+-- =====================================================
+-- 
+-- TASK DESCRIPTION: Create comprehensive views and prepare data for dashboard integration
+-- BUSINESS PURPOSE: Enable real-time healthcare analytics and executive reporting
+-- EXPECTED OUTCOME: Dashboard-ready views and executive KPI summaries
 
 -- Create comprehensive view for dashboard integration
 CREATE OR REPLACE VIEW healthcare_analytics_dashboard AS
